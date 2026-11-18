@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>기사 프로젝트 노트</title>
+<style>
+  :root {
+    --bg: #f2f1ee;
+    --paper: #ffffff;
+    --text: #1d1d1f;
+    --sub: #86868b;
+    --line: #e5e5ea;
+    --accent: #e8a500;
+    --accent-soft: #fff6d6;
+    --check: #e8a500;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1c1c1e;
+      --paper: #2a2a2c;
+      --text: #f5f5f7;
+      --sub: #98989f;
+      --line: #3a3a3c;
+      --accent: #ffd60a;
+      --accent-soft: #3a3320;
+      --check: #ffd60a;
+    }
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Apple SD Gothic Neo", "Pretendard", "Noto Sans KR", "Malgun Gothic", sans-serif;
+    font-size: 17px;
+    line-height: 1.6;
+    padding: max(16px, env(safe-area-inset-top)) 16px max(32px, env(safe-area-inset-bottom));
+    -webkit-font-smoothing: antialiased;
+  }
+  .note {
+    max-width: 720px;
+    margin: 0 auto;
+    background: var(--paper);
+    border-radius: 14px;
+    box-shadow: 0 1px 2px rgba(0,0,0,.06), 0 8px 24px rgba(0,0,0,.06);
+    overflow: hidden;
+  }
+  .titlebar {
+    display: flex; align-items: center; gap: 8px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--line);
+    background: var(--accent-soft);
+  }
+  .dot { width: 12px; height: 12px; border-radius: 50%; }
+  .dot.r { background: #ff5f57; } .dot.y { background: #febc2e; } .dot.g { background: #28c840; }
+  .titlebar .label { margin-left: 8px; font-size: 13px; color: var(--sub); }
+  .body { padding: 24px 24px 32px; }
+  h1 {
+    font-size: 28px; line-height: 1.25; margin: 0 0 4px; font-weight: 700; letter-spacing: -.02em;
+  }
+  .meta { color: var(--sub); font-size: 13px; margin-bottom: 24px; }
+  section { margin-top: 28px; }
+  h2 {
+    font-size: 13px; font-weight: 600; color: var(--accent);
+    margin: 0 0 8px; letter-spacing: .02em;
+  }
+  .field {
+    width: 100%; border: 0; outline: 0; background: transparent;
+    color: var(--text); font: inherit; padding: 6px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .field:focus { border-bottom-color: var(--accent); }
+  .field.big { font-size: 20px; font-weight: 600; }
+  .menu { position: relative; }
+  .menu-btn {
+    width: 100%; display: flex; align-items: center; justify-content: space-between;
+    background: transparent; border: 0; border-bottom: 1px solid var(--line);
+    color: var(--text); font: inherit; font-size: 18px; font-weight: 600;
+    padding: 6px 0; cursor: pointer; text-align: left;
+  }
+  .menu-btn:focus-visible, .menu.open .menu-btn { outline: 0; border-bottom-color: var(--accent); }
+  .chev {
+    width: 8px; height: 8px; margin-right: 4px;
+    border: solid var(--sub); border-width: 0 2px 2px 0;
+    transform: rotate(45deg) translateY(-2px); transition: transform .15s;
+  }
+  .menu.open .chev { transform: rotate(-135deg) translateY(-2px); }
+  .menu-list {
+    position: absolute; left: 0; right: 0; top: calc(100% + 6px); z-index: 10;
+    margin: 0; padding: 6px; list-style: none;
+    background: var(--paper); border: 1px solid var(--line); border-radius: 12px;
+    box-shadow: 0 8px 28px rgba(0,0,0,.18);
+  }
+  .menu-list[hidden] { display: none; }
+  .menu-list li {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 12px; border-radius: 8px; color: var(--text); cursor: pointer;
+  }
+  .menu-list li:hover { background: var(--accent-soft); }
+  .menu-list li[aria-selected="true"] { font-weight: 600; }
+  .menu-list li[aria-selected="true"]::after { content: "✓"; color: var(--accent); font-weight: 700; }
+  ::placeholder { color: var(--sub); opacity: .7; }
+
+  /* 체크리스트 */
+  .todo { list-style: none; margin: 0; padding: 0; }
+  .todo li {
+    display: flex; align-items: center; gap: 12px;
+    padding: 8px 0; border-bottom: 1px solid var(--line);
+  }
+  .todo input[type=checkbox] {
+    appearance: none; -webkit-appearance: none;
+    flex: none; width: 24px; height: 24px; margin: 0;
+    border: 1.5px solid var(--sub); border-radius: 50%;
+    display: grid; place-content: center; cursor: pointer;
+    transition: background .15s, border-color .15s;
+  }
+  .todo input[type=checkbox]::after {
+    content: ""; width: 6px; height: 11px;
+    border: solid #fff; border-width: 0 2.5px 2.5px 0;
+    transform: translateY(-1px) rotate(45deg) scale(0); transition: transform .12s;
+  }
+  .todo input[type=checkbox]:checked { background: var(--check); border-color: var(--check); }
+  .todo input[type=checkbox]:checked::after { transform: translateY(-1px) rotate(45deg) scale(1); }
+  .todo .txt {
+    flex: 1; min-width: 0; border: 0; outline: 0; background: transparent;
+    color: var(--text); font: inherit; padding: 4px 0;
+  }
+  .todo li.done .txt { color: var(--sub); text-decoration: line-through; }
+
+  /* 날짜별 기록 (타임라인) */
+  .log { position: relative; padding-left: 28px; }
+  .log::before {
+    content: ""; position: absolute; left: 6px; top: 14px; bottom: 14px;
+    width: 2px; background: var(--line); border-radius: 1px;
+  }
+  .entry { position: relative; padding: 8px 0 14px; }
+  .entry::before {
+    content: ""; position: absolute; left: -28px; top: 14px;
+    width: 14px; height: 14px; border-radius: 50%;
+    background: var(--paper); border: 3px solid var(--accent);
+  }
+  .entry.today::before { background: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+  .entry .date { font-weight: 600; color: var(--accent); font-size: 14px; font-variant-numeric: tabular-nums; }
+  .entry .today-tag {
+    display: inline-block; margin-left: 6px; font-size: 11px; font-weight: 600;
+    background: var(--accent); color: #1d1d1f; border-radius: 6px; padding: 0 6px; vertical-align: 1px;
+  }
+  .entry .line {
+    width: 100%; border: 0; outline: 0; background: transparent; resize: none;
+    color: var(--text); font: inherit; padding: 2px 0; overflow: hidden;
+    border-bottom: 1px solid var(--line);
+  }
+  .entry .line:focus { border-bottom-color: var(--accent); }
+  .add {
+    margin-top: 12px; background: transparent; border: 0; color: var(--accent);
+    font: inherit; font-weight: 600; padding: 8px 0; cursor: pointer;
+  }
+  .add:active { opacity: .6; }
+
+  @media (max-width: 480px) {
+    body { padding: 12px; font-size: 16px; }
+    .body { padding: 20px 16px 28px; }
+    h1 { font-size: 24px; }
+  }
+</style>
+</head>
+<body>
+  <main class="note">
+    <div class="titlebar" aria-hidden="true">
+      <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+      <span class="label">메모</span>
+    </div>
+
+    <div class="body">
+      <h1>기사 프로젝트 노트</h1>
+      <div class="meta">입력한 내용은 이 기기의 브라우저에 자동 저장돼요.</div>
+
+      <section>
+        <h2>프로젝트 한 줄</h2>
+        <input class="field big" id="project" value="브리프 한 줄" aria-label="프로젝트 한 줄">
+      </section>
+
+      <section>
+        <h2>주제</h2>
+        <div class="menu" id="topicMenu">
+          <button class="menu-btn" id="topicBtn" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="주제">
+            <span id="topicLabel">경제</span><i class="chev"></i>
+          </button>
+          <ul class="menu-list" id="topicList" role="listbox" hidden>
+            <li role="option" data-v="정치">정치</li>
+            <li role="option" data-v="경제">경제</li>
+            <li role="option" data-v="사회">사회</li>
+            <li role="option" data-v="문화·생활">문화·생활</li>
+            <li role="option" data-v="IT·과학">IT·과학</li>
+          </ul>
+        </div>
+      </section>
+
+      <section>
+        <h2>할 일 체크리스트</h2>
+        <ul class="todo" id="todo"></ul>
+      </section>
+
+      <section>
+        <h2>날짜별 기록</h2>
+        <div class="log" id="log"></div>
+        <button class="add" id="addDay" type="button">+ 다음 날짜 추가</button>
+      </section>
+    </div>
+  </main>
+
+<script>
+(function () {
+  var KEY = "article-project-note-v1";
+  var YEAR = 2026;
+
+  var defaults = {
+    project: "브리프 한 줄",
+    topic: "경제",
+    todos: [1,2,3,4,5].map(function () { return { t: "", d: false }; }),
+    log: [{ d: "11/18", t: "" }]
+  };
+
+  function load() {
+    try {
+      var raw = localStorage.getItem(KEY);
+      if (raw) return JSON.parse(raw);
+    } catch (e) {}
+    return JSON.parse(JSON.stringify(defaults));
+  }
+  var state = load();
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
+  }
+
+  var $project = document.getElementById("project");
+  var $menu = document.getElementById("topicMenu");
+  var $btn = document.getElementById("topicBtn");
+  var $label = document.getElementById("topicLabel");
+  var $list = document.getElementById("topicList");
+  var $todo = document.getElementById("todo");
+  var $log = document.getElementById("log");
+
+  $project.value = state.project;
+  var topics = ["정치","경제","사회","문화·생활","IT·과학"];
+  if (topics.indexOf(state.topic) < 0) state.topic = "경제";
+  function setTopic(v) {
+    state.topic = v; $label.textContent = v;
+    Array.prototype.forEach.call($list.children, function (li) {
+      li.setAttribute("aria-selected", li.dataset.v === v ? "true" : "false");
+    });
+  }
+  function toggle(open) {
+    $list.hidden = !open; $menu.classList.toggle("open", open);
+    $btn.setAttribute("aria-expanded", open ? "true" : "false");
+  }
+  setTopic(state.topic);
+  $btn.addEventListener("click", function () { toggle($list.hidden); });
+  $list.addEventListener("click", function (e) {
+    var li = e.target.closest("li"); if (!li) return;
+    setTopic(li.dataset.v); save(); toggle(false);
+  });
+  document.addEventListener("click", function (e) { if (!$menu.contains(e.target)) toggle(false); });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") toggle(false); });
+  $project.addEventListener("input", function () { state.project = $project.value; save(); });
+
+  // 체크리스트
+  state.todos.forEach(function (item, i) {
+    var li = document.createElement("li");
+    if (item.d) li.className = "done";
+
+    var cb = document.createElement("input");
+    cb.type = "checkbox"; cb.checked = item.d;
+    cb.setAttribute("aria-label", "할 일 " + (i + 1) + " 완료");
+
+    var tx = document.createElement("input");
+    tx.type = "text"; tx.className = "txt"; tx.value = item.t;
+    tx.placeholder = "할 일 " + (i + 1);
+
+    cb.addEventListener("change", function () {
+      item.d = cb.checked; li.classList.toggle("done", cb.checked); save();
+    });
+    tx.addEventListener("input", function () { item.t = tx.value; save(); });
+
+    li.appendChild(cb); li.appendChild(tx); $todo.appendChild(li);
+  });
+
+  // 날짜별 기록
+  function todayStr() {
+    var n = new Date();
+    return (n.getMonth() + 1) + "/" + n.getDate();
+  }
+  function grow(el) { el.style.height = "auto"; el.style.height = el.scrollHeight + "px"; }
+
+  function renderEntry(entry) {
+    var row = document.createElement("div");
+    row.className = "entry" + (entry.d === todayStr() ? " today" : "");
+
+    var date = document.createElement("div");
+    date.className = "date";
+    date.textContent = entry.d;
+    if (entry.d === todayStr()) {
+      var tag = document.createElement("span");
+      tag.className = "today-tag"; tag.textContent = "오늘";
+      date.appendChild(tag);
+    }
+
+    var ta = document.createElement("textarea");
+    ta.className = "line"; ta.rows = 1; ta.value = entry.t;
+    ta.placeholder = "오늘 한 줄";
+    ta.setAttribute("aria-label", entry.d + " 기록");
+    ta.addEventListener("input", function () { entry.t = ta.value; grow(ta); save(); });
+
+    row.appendChild(date); row.appendChild(ta);
+    $log.appendChild(row);
+    grow(ta);
+  }
+  state.log.forEach(renderEntry);
+
+  document.getElementById("addDay").addEventListener("click", function () {
+    var last = state.log[state.log.length - 1].d.split("/");
+    var next = new Date(YEAR, parseInt(last[0], 10) - 1, parseInt(last[1], 10) + 1);
+    var entry = { d: (next.getMonth() + 1) + "/" + next.getDate(), t: "" };
+    state.log.push(entry);
+    renderEntry(entry);
+    save();
+    var areas = $log.querySelectorAll("textarea");
+    areas[areas.length - 1].focus();
+  });
+})();
+</script>
+</body>
+</html>
