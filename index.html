@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>기사 노트</title>
+<title>기사 프로젝트 노트</title>
 <style>
   :root {
     --bg: #f2f1ee;
@@ -72,6 +72,34 @@
   }
   .field:focus { border-bottom-color: var(--accent); }
   .field.big { font-size: 20px; font-weight: 600; }
+  .menu { position: relative; }
+  .menu-btn {
+    width: 100%; display: flex; align-items: center; justify-content: space-between;
+    background: transparent; border: 0; border-bottom: 1px solid var(--line);
+    color: var(--text); font: inherit; font-size: 18px; font-weight: 600;
+    padding: 6px 0; cursor: pointer; text-align: left;
+  }
+  .menu-btn:focus-visible, .menu.open .menu-btn { outline: 0; border-bottom-color: var(--accent); }
+  .chev {
+    width: 8px; height: 8px; margin-right: 4px;
+    border: solid var(--sub); border-width: 0 2px 2px 0;
+    transform: rotate(45deg) translateY(-2px); transition: transform .15s;
+  }
+  .menu.open .chev { transform: rotate(-135deg) translateY(-2px); }
+  .menu-list {
+    position: absolute; left: 0; right: 0; top: calc(100% + 6px); z-index: 10;
+    margin: 0; padding: 6px; list-style: none;
+    background: var(--paper); border: 1px solid var(--line); border-radius: 12px;
+    box-shadow: 0 8px 28px rgba(0,0,0,.18);
+  }
+  .menu-list[hidden] { display: none; }
+  .menu-list li {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 12px; border-radius: 8px; color: var(--text); cursor: pointer;
+  }
+  .menu-list li:hover { background: var(--accent-soft); }
+  .menu-list li[aria-selected="true"] { font-weight: 600; }
+  .menu-list li[aria-selected="true"]::after { content: "✓"; color: var(--accent); font-weight: 700; }
   ::placeholder { color: var(--sub); opacity: .7; }
 
   /* 체크리스트 */
@@ -100,21 +128,30 @@
   }
   .todo li.done .txt { color: var(--sub); text-decoration: line-through; }
 
-  /* 날짜별 기록 */
-  .log { display: grid; gap: 4px; }
-  .entry {
-    display: grid; grid-template-columns: 64px 1fr; gap: 12px; align-items: start;
-    padding: 10px 0; border-bottom: 1px solid var(--line);
+  /* 날짜별 기록 (타임라인) */
+  .log { position: relative; padding-left: 28px; }
+  .log::before {
+    content: ""; position: absolute; left: 6px; top: 14px; bottom: 14px;
+    width: 2px; background: var(--line); border-radius: 1px;
   }
-  .entry .date { font-weight: 600; color: var(--accent); padding-top: 4px; font-variant-numeric: tabular-nums; }
+  .entry { position: relative; padding: 8px 0 14px; }
+  .entry::before {
+    content: ""; position: absolute; left: -28px; top: 14px;
+    width: 14px; height: 14px; border-radius: 50%;
+    background: var(--paper); border: 3px solid var(--accent);
+  }
+  .entry.today::before { background: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+  .entry .date { font-weight: 600; color: var(--accent); font-size: 14px; font-variant-numeric: tabular-nums; }
   .entry .today-tag {
     display: inline-block; margin-left: 6px; font-size: 11px; font-weight: 600;
     background: var(--accent); color: #1d1d1f; border-radius: 6px; padding: 0 6px; vertical-align: 1px;
   }
   .entry .line {
     width: 100%; border: 0; outline: 0; background: transparent; resize: none;
-    color: var(--text); font: inherit; padding: 4px 0; overflow: hidden;
+    color: var(--text); font: inherit; padding: 2px 0; overflow: hidden;
+    border-bottom: 1px solid var(--line);
   }
+  .entry .line:focus { border-bottom-color: var(--accent); }
   .add {
     margin-top: 12px; background: transparent; border: 0; color: var(--accent);
     font: inherit; font-weight: 600; padding: 8px 0; cursor: pointer;
@@ -125,7 +162,6 @@
     body { padding: 12px; font-size: 16px; }
     .body { padding: 20px 16px 28px; }
     h1 { font-size: 24px; }
-    .entry { grid-template-columns: 52px 1fr; gap: 8px; }
   }
 </style>
 </head>
@@ -147,7 +183,18 @@
 
       <section>
         <h2>주제</h2>
-        <input class="field" id="topic" value="경제" aria-label="주제">
+        <div class="menu" id="topicMenu">
+          <button class="menu-btn" id="topicBtn" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="주제">
+            <span id="topicLabel">경제</span><i class="chev"></i>
+          </button>
+          <ul class="menu-list" id="topicList" role="listbox" hidden>
+            <li role="option" data-v="정치">정치</li>
+            <li role="option" data-v="경제">경제</li>
+            <li role="option" data-v="사회">사회</li>
+            <li role="option" data-v="문화·생활">문화·생활</li>
+            <li role="option" data-v="IT·과학">IT·과학</li>
+          </ul>
+        </div>
       </section>
 
       <section>
@@ -188,14 +235,35 @@
   }
 
   var $project = document.getElementById("project");
-  var $topic = document.getElementById("topic");
+  var $menu = document.getElementById("topicMenu");
+  var $btn = document.getElementById("topicBtn");
+  var $label = document.getElementById("topicLabel");
+  var $list = document.getElementById("topicList");
   var $todo = document.getElementById("todo");
   var $log = document.getElementById("log");
 
   $project.value = state.project;
-  $topic.value = state.topic;
+  var topics = ["정치","경제","사회","문화·생활","IT·과학"];
+  if (topics.indexOf(state.topic) < 0) state.topic = "경제";
+  function setTopic(v) {
+    state.topic = v; $label.textContent = v;
+    Array.prototype.forEach.call($list.children, function (li) {
+      li.setAttribute("aria-selected", li.dataset.v === v ? "true" : "false");
+    });
+  }
+  function toggle(open) {
+    $list.hidden = !open; $menu.classList.toggle("open", open);
+    $btn.setAttribute("aria-expanded", open ? "true" : "false");
+  }
+  setTopic(state.topic);
+  $btn.addEventListener("click", function () { toggle($list.hidden); });
+  $list.addEventListener("click", function (e) {
+    var li = e.target.closest("li"); if (!li) return;
+    setTopic(li.dataset.v); save(); toggle(false);
+  });
+  document.addEventListener("click", function (e) { if (!$menu.contains(e.target)) toggle(false); });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") toggle(false); });
   $project.addEventListener("input", function () { state.project = $project.value; save(); });
-  $topic.addEventListener("input", function () { state.topic = $topic.value; save(); });
 
   // 체크리스트
   state.todos.forEach(function (item, i) {
@@ -227,7 +295,7 @@
 
   function renderEntry(entry) {
     var row = document.createElement("div");
-    row.className = "entry";
+    row.className = "entry" + (entry.d === todayStr() ? " today" : "");
 
     var date = document.createElement("div");
     date.className = "date";
