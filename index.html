@@ -72,34 +72,10 @@
   }
   .field:focus { border-bottom-color: var(--accent); }
   .field.big { font-size: 20px; font-weight: 600; }
-  .menu { position: relative; }
-  .menu-btn {
-    width: 100%; display: flex; align-items: center; justify-content: space-between;
-    background: transparent; border: 0; border-bottom: 1px solid var(--line);
-    color: var(--text); font: inherit; font-size: 18px; font-weight: 600;
-    padding: 6px 0; cursor: pointer; text-align: left;
+  .topic-fixed {
+    font-size: 18px; font-weight: 600; padding: 6px 0;
+    border-bottom: 1px solid var(--line);
   }
-  .menu-btn:focus-visible, .menu.open .menu-btn { outline: 0; border-bottom-color: var(--accent); }
-  .chev {
-    width: 8px; height: 8px; margin-right: 4px;
-    border: solid var(--sub); border-width: 0 2px 2px 0;
-    transform: rotate(45deg) translateY(-2px); transition: transform .15s;
-  }
-  .menu.open .chev { transform: rotate(-135deg) translateY(-2px); }
-  .menu-list {
-    position: absolute; left: 0; right: 0; top: calc(100% + 6px); z-index: 10;
-    margin: 0; padding: 6px; list-style: none;
-    background: var(--paper); border: 1px solid var(--line); border-radius: 12px;
-    box-shadow: 0 8px 28px rgba(0,0,0,.18);
-  }
-  .menu-list[hidden] { display: none; }
-  .menu-list li {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 10px 12px; border-radius: 8px; color: var(--text); cursor: pointer;
-  }
-  .menu-list li:hover { background: var(--accent-soft); }
-  .menu-list li[aria-selected="true"] { font-weight: 600; }
-  .menu-list li[aria-selected="true"]::after { content: "✓"; color: var(--accent); font-weight: 700; }
   ::placeholder { color: var(--sub); opacity: .7; }
 
   /* 체크리스트 */
@@ -183,18 +159,7 @@
 
       <section>
         <h2>주제</h2>
-        <div class="menu" id="topicMenu">
-          <button class="menu-btn" id="topicBtn" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="주제">
-            <span id="topicLabel">경제</span><i class="chev"></i>
-          </button>
-          <ul class="menu-list" id="topicList" role="listbox" hidden>
-            <li role="option" data-v="정치">정치</li>
-            <li role="option" data-v="경제">경제</li>
-            <li role="option" data-v="사회">사회</li>
-            <li role="option" data-v="문화·생활">문화·생활</li>
-            <li role="option" data-v="IT·과학">IT·과학</li>
-          </ul>
-        </div>
+        <div class="topic-fixed">AI와 교육</div>
       </section>
 
       <section>
@@ -217,7 +182,6 @@
 
   var defaults = {
     project: "브리프 한 줄",
-    topic: "경제",
     todos: [1,2,3,4,5].map(function () { return { t: "", d: false }; }),
     log: [{ d: "11/18", t: "" }]
   };
@@ -235,34 +199,10 @@
   }
 
   var $project = document.getElementById("project");
-  var $menu = document.getElementById("topicMenu");
-  var $btn = document.getElementById("topicBtn");
-  var $label = document.getElementById("topicLabel");
-  var $list = document.getElementById("topicList");
   var $todo = document.getElementById("todo");
   var $log = document.getElementById("log");
 
   $project.value = state.project;
-  var topics = ["정치","경제","사회","문화·생활","IT·과학"];
-  if (topics.indexOf(state.topic) < 0) state.topic = "경제";
-  function setTopic(v) {
-    state.topic = v; $label.textContent = v;
-    Array.prototype.forEach.call($list.children, function (li) {
-      li.setAttribute("aria-selected", li.dataset.v === v ? "true" : "false");
-    });
-  }
-  function toggle(open) {
-    $list.hidden = !open; $menu.classList.toggle("open", open);
-    $btn.setAttribute("aria-expanded", open ? "true" : "false");
-  }
-  setTopic(state.topic);
-  $btn.addEventListener("click", function () { toggle($list.hidden); });
-  $list.addEventListener("click", function (e) {
-    var li = e.target.closest("li"); if (!li) return;
-    setTopic(li.dataset.v); save(); toggle(false);
-  });
-  document.addEventListener("click", function (e) { if (!$menu.contains(e.target)) toggle(false); });
-  document.addEventListener("keydown", function (e) { if (e.key === "Escape") toggle(false); });
   $project.addEventListener("input", function () { state.project = $project.value; save(); });
 
   // 체크리스트
